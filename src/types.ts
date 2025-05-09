@@ -12,7 +12,7 @@ export type Post = {
     content: string;
 
     user_id: string;
-    user: string;
+    user: User;
 
     parent_id: string | null;
     parent: Post | null;

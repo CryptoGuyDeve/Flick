@@ -1,6 +1,6 @@
 import { User, Post } from './types';
 
-export const users: User[] = [
+export const dummyUsers: User[] = [
     {
         id: "1",
         username: "johndoe",
@@ -38,153 +38,153 @@ export const users: User[] = [
     }
 ];
 
-export const posts: Post[] = [
+export const dummyPosts: Post[] = [
     {
         id: "1",
         createdAt: "2024-03-15T10:00:00Z",
         content: "Just launched my new React Native app! 🚀 #coding #reactnative",
         user_id: "1",
-        user: "johndoe",
+        user: dummyUsers[0],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "2",
-        createdAt: "2024-03-15T10:05:00Z",
+        createdAt: "2025-05-10T10:05:00Z",
         content: "That's awesome! Can't wait to try it out!",
         user_id: "2",
-        user: "sarahsmith",
+        user: dummyUsers[1],
         parent_id: "1",
         parent: null,
         replies: []
     },
     {
         id: "3",
-        createdAt: "2024-03-15T10:10:00Z",
+        createdAt: "2025-05-10T10:10:00Z",
         content: "Working on some exciting new UI designs today! 🎨",
         user_id: "2",
-        user: "sarahsmith",
+        user: dummyUsers[1],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "4",
-        createdAt: "2024-03-15T11:00:00Z",
+        createdAt: "2025-05-10T11:00:00Z",
         content: "Just finished a 10km run! 💪 #fitness #health",
         user_id: "3",
-        user: "mike_wilson",
+        user: dummyUsers[2],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "5",
-        createdAt: "2024-03-15T11:30:00Z",
+        createdAt: "2025-05-10T11:30:00Z",
         content: "Great job! Keep up the good work!",
         user_id: "4",
-        user: "emily_j",
+        user: dummyUsers[3],
         parent_id: "4",
         parent: null,
         replies: []
     },
     {
         id: "6",
-        createdAt: "2024-03-15T12:00:00Z",
+        createdAt: "2025-05-10T12:00:00Z",
         content: "Working on some new digital art pieces. Will share soon! 🎨",
         user_id: "4",
-        user: "emily_j",
+        user: dummyUsers[3],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "7",
-        createdAt: "2024-03-15T13:00:00Z",
+        createdAt: "2025-05-10T13:00:00Z",
         content: "Just published a new research paper on AI advancements!",
         user_id: "5",
-        user: "alex_tech",
+        user: dummyUsers[4],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "8",
-        createdAt: "2024-03-15T13:05:00Z",
+        createdAt: "2025-05-10T13:05:00Z",
         content: "Congratulations! Would love to read it.",
         user_id: "1",
-        user: "johndoe",
+        user: dummyUsers[0],
         parent_id: "7",
         parent: null,
         replies: []
     },
     {
         id: "9",
-        createdAt: "2024-03-15T14:00:00Z",
+        createdAt: "2025-05-10T14:00:00Z",
         content: "Beautiful day for a hike! 🌲 #nature #outdoors",
         user_id: "5",
-        user: "alex_tech",
+        user: dummyUsers[4],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "10",
-        createdAt: "2024-03-15T15:00:00Z",
+        createdAt: "2025-05-10T15:00:00Z",
         content: "Just finished reading an amazing book! Any recommendations?",
         user_id: "4",
-        user: "emily_j",
+        user: dummyUsers[3],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "11",
-        createdAt: "2024-03-15T15:30:00Z",
+        createdAt: "2025-05-10T15:30:00Z",
         content: "I've been reading 'The Pragmatic Programmer', highly recommend!",
         user_id: "1",
-        user: "johndoe",
+        user: dummyUsers[0],
         parent_id: "10",
         parent: null,
         replies: []
     },
     {
         id: "12",
-        createdAt: "2024-03-15T16:00:00Z",
+        createdAt: "2025-05-10T16:00:00Z",
         content: "Working on a new startup idea! Excited to share more soon.",
         user_id: "3",
-        user: "mike_wilson",
+        user: dummyUsers[2],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "13",
-        createdAt: "2024-03-15T16:05:00Z",
+        createdAt: "2025-05-10T16:05:00Z",
         content: "Can't wait to hear more about it!",
         user_id: "2",
-        user: "sarahsmith",
+        user: dummyUsers[1],
         parent_id: "12",
         parent: null,
         replies: []
     },
     {
         id: "14",
-        createdAt: "2024-03-15T17:00:00Z",
+        createdAt: "2025-05-10T17:00:00Z",
         content: "Just completed a new UI design project! Check it out!",
         user_id: "2",
-        user: "sarahsmith",
+        user: dummyUsers[1],
         parent_id: null,
         parent: null,
         replies: []
     },
     {
         id: "15",
-        createdAt: "2024-03-15T17:30:00Z",
+        createdAt: "2025-05-10T17:30:00Z",
         content: "Looks amazing! Great work!",
         user_id: "3",
-        user: "mike_wilson",
+        user: dummyUsers[2],
         parent_id: "14",
         parent: null,
         replies: []
