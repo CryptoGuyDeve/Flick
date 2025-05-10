@@ -12,7 +12,7 @@ import {
 export default function NewPostScreen() {
   const [text, setText] = useState("");
   return (
-    <SafeAreaView edges={['bottom']} className="p-4 flex-1">
+    <SafeAreaView className="p-4 flex-1">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -28,6 +28,14 @@ export default function NewPostScreen() {
           className="text-white text-lg"
           multiline
           numberOfLines={4}
+        />
+        <TextInput
+          placeholder="Password"
+          placeholderTextColor="gray"
+          className="text-white text-lg"
+          multiline
+          numberOfLines={4}
+          secureTextEntry
         />
 
         <View className="mt-auto">
