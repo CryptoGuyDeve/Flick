@@ -29,15 +29,6 @@ export default function NewPostScreen() {
           multiline
           numberOfLines={4}
         />
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="gray"
-          className="text-white text-lg"
-          multiline
-          numberOfLines={4}
-          secureTextEntry
-        />
-
         <View className="mt-auto">
           <Pressable
             onPress={() => console.log("post: ", text)}
