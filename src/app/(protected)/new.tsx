@@ -38,6 +38,8 @@ export default function NewPostScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Video paused at 2:03:21 */}
     </SafeAreaView>
   );
 }
