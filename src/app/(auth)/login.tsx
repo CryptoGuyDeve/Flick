@@ -1,8 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, Pressable, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Image, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
 
 interface FormErrors {
   email?: string;
@@ -39,25 +40,27 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!validateForm()) return;
 
+    if (!email || !password) {
+      Alert.alert('Please enter your email and password')
+      return
+    }
+
     try {
       setIsLoading(true);
       setLoginError('');
       
-      // TODO: Implement your login logic here
-      // For example:
-      // const response = await loginUser(email, password);
-      // if (response.success) {
-      //   router.replace('/(tabs)');
-      // }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) Alert.alert(error.message)
       
       // Simulating API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // For demo purposes, let's just navigate
-      router.replace('/(tabs)');
-      
     } catch (error) {
-      setLoginError('Invalid email or password');
+      console.log('Login error', error)
+      Alert.alert('Login error', error.message)
     } finally {
       setIsLoading(false);
     }

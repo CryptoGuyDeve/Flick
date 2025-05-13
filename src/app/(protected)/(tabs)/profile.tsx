@@ -1,14 +1,15 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-
-const profileScreen = () => {
+import { View } from "react-native";
+import { Text } from "react-native";
+import { supabase } from "@/lib/supabase";
+export default function ProfileScreen() {
   return (
-    <View>
-      <Text>profile</Text>
+    <View className="flex-1 items-center justify-center">
+      <Text
+        onPress={() => supabase.auth.signOut()}
+        className="text-2xl font-bold text-white"
+      >
+        Sign Out
+      </Text>
     </View>
-  )
+  );
 }
-
-export default profileScreen
-
-const styles = StyleSheet.create({})

@@ -1,10 +1,20 @@
-import { Stack } from "expo-router";
+import { useAuth } from "@/providers/AuthProvider";
+import { Redirect, Stack } from "expo-router";
 
 export default function AuthLayout() {
-    return (
-        <Stack>
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="signup" options={{ title: 'Sign Up', headerBackButtonDisplayMode: 'minimal' }} />
-        </Stack>
-    )
+    const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Redirect href="/(protected)" />;
+  }
+
+  return (
+    <Stack>
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="signup"
+        options={{ title: "Sign Up", headerBackButtonDisplayMode: "minimal" }}
+      />
+    </Stack>
+  );
 }

@@ -3,31 +3,24 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
+import { Alert } from 'react-native';
 
 interface FormErrors {
-  name?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
 }
 
 export default function SignUpScreen() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [signupError, setSignupError] = useState('');
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    
-    if (!name) {
-      newErrors.name = 'Name is required';
-    }
     
     if (!email) {
       newErrors.email = 'Email is required';
@@ -41,38 +34,38 @@ export default function SignUpScreen() {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handleSignUp = async () => {
     if (!validateForm()) return;
+
+    if (!email || !password) {
+      setSignupError('Please enter your email and password')
+      return
+    }
 
     try {
       setIsLoading(true);
       setSignupError('');
       
-      // TODO: Implement your signup logic here
-      // For example:
-      // const response = await signUpUser(name, email, password);
-      // if (response.success) {
-      //   router.replace('/(tabs)');
-      // }
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      if (error) Alert.alert(error.message)
+      if (!session) Alert.alert('Please check your inbox for email verification!')
       
       // Simulating API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, let's just navigate
-      router.replace('/(tabs)');
-      
+
     } catch (error) {
-      setSignupError('Failed to create account. Please try again.');
+      console.error('Login error', error)
     } finally {
       setIsLoading(false);
     }
@@ -104,29 +97,6 @@ export default function SignUpScreen() {
             ) : null}
 
             <View className="space-y-5 gap-4">
-              <View className="space-y-1">
-                <Text className="text-gray-400 text-sm ml-1">Full Name</Text>
-                <View className={`flex-row items-center bg-gray-800/30 border ${errors.name ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
-                  <Ionicons name="person-outline" size={20} color="#6B7280" />
-                  <TextInput
-                    className="flex-1 px-3 py-4 text-white text-base"
-                    placeholder="Enter your full name"
-                    placeholderTextColor="#6B7280"
-                    value={name}
-                    onChangeText={(text) => {
-                      setName(text);
-                      if (errors.name) {
-                        setErrors(prev => ({ ...prev, name: undefined }));
-                      }
-                    }}
-                    editable={!isLoading}
-                  />
-                </View>
-                {errors.name && (
-                  <Text className="text-red-500 text-sm ml-1">{errors.name}</Text>
-                )}
-              </View>
-
               <View className="space-y-1">
                 <Text className="text-gray-400 text-sm ml-1">Email</Text>
                 <View className={`flex-row items-center bg-gray-800/30 border ${errors.email ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
@@ -186,47 +156,13 @@ export default function SignUpScreen() {
                 )}
               </View>
 
-              <View className="space-y-1">
-                <Text className="text-gray-400 text-sm ml-1">Confirm Password</Text>
-                <View className={`flex-row items-center bg-gray-800/30 border ${errors.confirmPassword ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
-                  <Ionicons name="lock-closed-outline" size={20} color="#6B7280" />
-                  <TextInput
-                    className="flex-1 px-3 py-4 text-white text-base"
-                    placeholder="Confirm your password"
-                    placeholderTextColor="#6B7280"
-                    value={confirmPassword}
-                    onChangeText={(text) => {
-                      setConfirmPassword(text);
-                      if (errors.confirmPassword) {
-                        setErrors(prev => ({ ...prev, confirmPassword: undefined }));
-                      }
-                    }}
-                    secureTextEntry={!isConfirmPasswordVisible}
-                    editable={!isLoading}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
-                    disabled={isLoading}
-                  >
-                    <Ionicons 
-                      name={isConfirmPasswordVisible ? "eye-off-outline" : "eye-outline"} 
-                      size={20} 
-                      color="#6B7280" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.confirmPassword && (
-                  <Text className="text-red-500 text-sm ml-1">{errors.confirmPassword}</Text>
-                )}
-              </View>
-
               <TouchableOpacity
                 onPress={handleSignUp}
                 className="w-full py-4 rounded-2xl overflow-hidden bg-white"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color="#000" />
                 ) : (
                   <Text className="text-black text-center font-semibold text-base">Create Account</Text>
                 )}
