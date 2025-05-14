@@ -1,12 +1,16 @@
 import { View, Text, Image, Pressable } from "react-native";
-import { Post } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { Tables } from "@/types/database.types";
 
 dayjs.extend(relativeTime);
 
-export default function PostListItem({ post }: { post: Post }) {
+type PostWithUser = Tables<"posts"> & {
+  user: Tables<"profiles">;
+};
+
+export default function PostListItem({ post }: { post: PostWithUser }) {
   return (
     <Pressable className="flex-row p-4 border-b border-gray-800">
       {/* User Avatar */}
