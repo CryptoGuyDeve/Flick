@@ -4,15 +4,8 @@ import { Link } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ActivityIndicator, Text } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { fetchPosts } from "@/services/post";
 
-const fetchPosts = async () => {
-  const { data } = await supabase
-    .from("posts")
-    .select("*, user:profiles(*)")
-    .throwOnError();
-
-  return data;
-};
 
 export default function HomeScreen() {
   const { data, isLoading, error} = useQuery({
