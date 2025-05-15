@@ -1,8 +1,9 @@
 import PostListItem from "@/components/PostListItem";
+import PostReplyInput from "@/components/PostReplyInput";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
 const getPostById = async (id: string) => {
   const { data } = await supabase
@@ -27,11 +28,16 @@ export default function PostDetails() {
 
   if (error) return <Text className="text-red-500">{error.message}</Text>;
 
-  console.log(data)
+  console.log(data);
 
   return (
-    <View>
-      <PostListItem post={data} />
+    <View className="flex-1">
+      <FlatList
+        data={[]}
+        renderItem={({ item }) => <PostListItem post={item} />}
+        ListHeaderComponent={<PostListItem post={data} />}
+      />
+      <PostReplyInput postId={id} />
     </View>
   );
 }
