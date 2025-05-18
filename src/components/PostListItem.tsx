@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Tables } from "@/types/database.types";
 import { Link } from "expo-router";
+import { supabase } from "@/lib/supabase";
 
 dayjs.extend(relativeTime);
 
@@ -29,16 +30,18 @@ export default function PostListItem({
         }`}
       >
         {/* User Avatar */}
-        <View className="items-center gap-2">
+        <View className="mr-3 relative w-12 items-center">
+          {/* Avatar */}
           <Image
             source={{
               uri: post.user.avatar_url || "https://via.placeholder.com/150",
             }}
-            className="w-12 h-12 rounded-full mr-3"
+            className="w-12 h-12 rounded-full z-10"
           />
 
+          {/* Thread Line */}
           {!isLastInGroup && (
-            <View className="w-[3px] h-12 rounded-full bg-neutral-700 -ml-5 translate-y-2 scale-125" />
+            <View className="w-[3px] flex-1 rounded-full bg-neutral-700 translate-y-2" />
           )}
         </View>
 
@@ -58,6 +61,21 @@ export default function PostListItem({
 
           {/* Post Text */}
           <Text className="text-white mb-3">{post.content}</Text>
+
+          {post.images && (
+            <View className="flex-row gap-2 mt-2">
+              {post.images.map((image) => (
+                <Image
+                  key={image}
+                  source={{
+                    uri: supabase.storage.from("media").getPublicUrl(image).data
+                      .publicUrl,
+                  }}
+                  className="w-full aspect-square rounded-lg"
+                />
+              ))}
+            </View>
+          )}
 
           {/* Interaction Buttons */}
           <View className="flex-row gap-4 max-w-[80%]">
