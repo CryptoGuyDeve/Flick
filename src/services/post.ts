@@ -30,7 +30,16 @@ export const getPostById = async (id: string) => {
     .single()
     .throwOnError();
 
-  console.log(JSON.stringify(data, null, 2));
+  return data;
+};
+
+export const getPostsByUserId = async (id: string) => {
+  const { data } = await supabase
+    .from("posts")
+    .select("*, user:profiles(*), replies:posts(count)")
+    .eq("user_id", id)
+    .order('created_at', { ascending: false })
+    .throwOnError();
 
   return data;
 };
