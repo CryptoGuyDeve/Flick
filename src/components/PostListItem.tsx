@@ -14,21 +14,41 @@ type PostWithUser = Tables<"posts"> & {
   }[];
 };
 
-export default function PostListItem({ post }: { post: PostWithUser }) {
+export default function PostListItem({
+  post,
+  isLastInGroup = true,
+}: {
+  post: PostWithUser;
+  isLastInGroup?: boolean;
+}) {
   return (
     <Link href={`/posts/${post.id}`} asChild>
-      <Pressable className="flex-row p-4 border-b border-gray-800">
+      <Pressable
+        className={`flex-row p-4 ${
+          isLastInGroup ? "border-b border-gray-800" : ""
+        }`}
+      >
         {/* User Avatar */}
-        <Image
-          source={{ uri: post.user.avatar_url || 'https://via.placeholder.com/150' }}
-          className="w-12 h-12 rounded-full mr-3"
-        />
+        <View className="items-center gap-2">
+          <Image
+            source={{
+              uri: post.user.avatar_url || "https://via.placeholder.com/150",
+            }}
+            className="w-12 h-12 rounded-full mr-3"
+          />
+
+          {!isLastInGroup && (
+            <View className="w-[3px] h-12 rounded-full bg-neutral-700 -ml-5 translate-y-2 scale-125" />
+          )}
+        </View>
 
         {/* Post Content */}
         <View className="flex-1">
           {/* User Info */}
           <View className="flex-row items-center mb-1">
-            <Text className="text-white font-bold mr-2">{post.user.full_name}</Text>
+            <Text className="text-white font-bold mr-2">
+              {post.user.full_name}
+            </Text>
             <Text className="text-gray-500">@{post.user.username}</Text>
             <Text className="text-gray-500 mx-1">·</Text>
             <Text className="text-gray-500">
@@ -48,7 +68,9 @@ export default function PostListItem({ post }: { post: PostWithUser }) {
 
             <Pressable className="flex-row items-center">
               <Ionicons name="chatbubble-outline" size={22} color="#d1d5db" />
-              <Text className="text-gray-300 ml-2">{post?.replies?.[0].count || 0}</Text>
+              <Text className="text-gray-300 ml-2">
+                {post?.replies?.[0].count || 0}
+              </Text>
             </Pressable>
 
             <Pressable className="flex-row items-center">

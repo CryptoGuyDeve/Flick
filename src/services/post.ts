@@ -1,19 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import { TablesInsert } from "@/types/database.types";
 
-type PostInput = TablesInsert<"posts">
+type PostInput = TablesInsert<"posts">;
 
 export const fetchPosts = async () => {
   const { data } = await supabase
     .from("posts")
     .select("*, user:profiles(*), replies:posts(count)")
     .throwOnError();
-    
+
   return data;
 };
 export const createPost = async (newPost: PostInput) => {
   const { data } = await supabase
-  .from("posts")
+    .from("posts")
     .insert(newPost)
     .select("*")
     .throwOnError();
@@ -28,6 +28,8 @@ export const getPostById = async (id: string) => {
     .eq("id", id)
     .single()
     .throwOnError();
+
+  console.log(JSON.stringify(data, null, 2));
 
   return data;
 };
