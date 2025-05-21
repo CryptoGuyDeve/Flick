@@ -1,6 +1,7 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { getProfileById } from "@/services/profiles";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "expo-router";
 import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 
 export default function ProfileHeader() {
@@ -38,16 +39,17 @@ export default function ProfileHeader() {
 
       <Text className="text-neutral-200 leading-snug">{profile?.bio}</Text>
 
-        <View className="flex-row gap-2">
-            <Pressable className="flex-1 py-2 rounded-lg border-2 bg-neutral-800">
-                <Text className="text-center text-neutral-200">Edit Profile</Text>
-            </Pressable>
+      <View className="flex-row gap-2">
+        <Link href="/profile/edit" asChild>
+          <Pressable className="flex-1 py-2 rounded-lg border-2 bg-neutral-800">
+            <Text className="text-center text-neutral-200">Edit Profile</Text>
+          </Pressable>
+        </Link>
 
-            <Pressable className="flex-1 py-2 rounded-lg border-2 bg-neutral-800">
-                <Text className="text-center text-neutral-200">Share Profile</Text>
-            </Pressable>
-        </View>
-      
+        <Pressable className="flex-1 py-2 rounded-lg border-2 bg-neutral-800">
+          <Text className="text-center text-neutral-200">Share Profile</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
