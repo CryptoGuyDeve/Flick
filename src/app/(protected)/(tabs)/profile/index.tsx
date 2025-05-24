@@ -37,15 +37,6 @@ export default function ProfileScreen() {
           </>
         )}
       />
-
-      {/* <Text
-        onPress={() => supabase.auth.signOut()}
-        className="text-2xl font-bold text-white"
-      >
-        Sign Out
-      </Text> */}
-
-      {/* 2:40:45 */}
     </View>
   );
 }

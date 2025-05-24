@@ -34,77 +34,109 @@ export type Database = {
   }
   public: {
     Tables: {
-      posts: {
+      likes: {
         Row: {
-          content: string | null
-          created_at: string
           id: string
-          images: string[] | null
-          parent_id: string | null
+          created_at: string
           user_id: string
+          post_id: string
         }
         Insert: {
-          content?: string | null
-          created_at?: string
           id?: string
-          images?: string[] | null
-          parent_id?: string | null
+          created_at?: string
           user_id: string
+          post_id: string
         }
         Update: {
-          content?: string | null
-          created_at?: string
           id?: string
-          images?: string[] | null
-          parent_id?: string | null
+          created_at?: string
           user_id?: string
+          post_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "posts_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+      }
+      notifications: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          actor_id: string
+          post_id: string | null
+          type: 'like' | 'reply'
+          read: boolean
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          actor_id: string
+          post_id?: string | null
+          type: 'like' | 'reply'
+          read?: boolean
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          actor_id?: string
+          post_id?: string | null
+          type?: 'like' | 'reply'
+          read?: boolean
+        }
+      }
+      posts: {
+        Row: {
+          id: string
+          created_at: string
+          content: string
+          user_id: string
+          parent_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          content: string
+          user_id: string
+          parent_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          content?: string
+          user_id?: string
+          parent_id?: string | null
+        }
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          full_name: string | null
           id: string
-          updated_at: string | null
-          username: string | null
+          created_at: string
+          updated_at: string
+          username: string
+          full_name: string
+          avatar_url: string | null
           website: string | null
+          bio: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          full_name?: string | null
           id: string
-          updated_at?: string | null
-          username?: string | null
+          created_at?: string
+          updated_at?: string
+          username: string
+          full_name: string
+          avatar_url?: string | null
           website?: string | null
+          bio?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          full_name?: string | null
           id?: string
-          updated_at?: string | null
-          username?: string | null
+          created_at?: string
+          updated_at?: string
+          username?: string
+          full_name?: string
+          avatar_url?: string | null
           website?: string | null
+          bio?: string | null
         }
-        Relationships: []
       }
     }
     Views: {

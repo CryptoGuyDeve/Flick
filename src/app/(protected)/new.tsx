@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProvider";
-import { use, useState } from "react";
+import { use, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,122 +11,246 @@ import {
   Platform,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { createPost } from "@/services/post";
 import { Entypo } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { getProfileById } from "@/services/profiles";
+import SupabaseImage from "@/components/SupabaseImage";
 
 export default function NewPostScreen() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { user } = useAuth();
-
   const queryClient = useQueryClient();
+
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: () => getProfileById(user!.id),
+    enabled: !!user?.id,
+  });
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
-      let imagePath = null;
-      if (image) {
-        imagePath = await uploadImage();
+      if (!text.trim() && !image) {
+        throw new Error("Post cannot be empty");
       }
 
-      return createPost({
-        content: text,
-        user_id: user!.id,
-        images: [imagePath],
-      });
+      setIsUploading(true);
+      try {
+        let imagePath = null;
+        if (image) {
+          imagePath = await uploadImage();
+        }
+
+        const post = await createPost({
+          content: text.trim(),
+          user_id: user!.id,
+          images: imagePath ? [imagePath] : [],
+        });
+
+        return post;
+      } finally {
+        setIsUploading(false);
+      }
     },
     onSuccess: (data) => {
+      // Clear form
       setText("");
-      router.back();
+      setImage(null);
+      
+      // Update cache optimistically
+      queryClient.setQueryData(["posts"], (oldData: any) => {
+        if (!oldData) return [data];
+        return [data, ...oldData];
+      });
+
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      
+      // Navigate back
+      router.back();
     },
-    onError: (error) => {
-      console.error(error);
-      // Alert.alert("Error", error.message);
+    onError: (error: Error) => {
+      console.error("Post creation error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Failed to create post. Please try again."
+      );
     },
   });
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 1,
-    });
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please grant permission to access your photos."
+        );
+        return;
+      }
 
-    console.log(result);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+        aspect: [4, 3],
+      });
 
-    if (!result.canceled) {
-      setImage(result.assets[0]);
+      if (!result.canceled) {
+        setImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.error("Image picker error:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
     }
   };
 
   const uploadImage = async () => {
-    if (!image) return;
-    const arraybuffer = await fetch(image.uri).then((res) => res.arrayBuffer());
+    if (!image) return null;
+    
+    try {
+      const arraybuffer = await fetch(image.uri).then((res) => res.arrayBuffer());
 
-    const fileExt = image.uri?.split(".").pop()?.toLowerCase() ?? "jpeg";
-    const path = `${Date.now()}.${fileExt}`;
-    const { data, error: uploadError } = await supabase.storage
-      .from("media")
-      .upload(path, arraybuffer, {
-        contentType: image.mimeType ?? "image/jpeg",
-      });
-    if (uploadError) {
-      throw uploadError;
+      const fileExt = image.uri?.split(".").pop()?.toLowerCase() ?? "jpeg";
+      const path = `${Date.now()}.${fileExt}`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from("media")
+        .upload(path, arraybuffer, {
+          contentType: image.mimeType ?? "image/jpeg",
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      return data.path;
+    } catch (error) {
+      console.error("Image upload error:", error);
+      throw new Error("Failed to upload image. Please try again.");
     }
-
-    return data.path;
   };
 
+  const handlePost = useCallback(() => {
+    if (isPending || isUploading) return;
+    mutate();
+  }, [isPending, isUploading, mutate]);
+
+  if (isLoadingProfile) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#121212] items-center justify-center">
+        <ActivityIndicator size="large" color="#fff" />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView className="p-4 flex-1">
+    <SafeAreaView className="p-4 flex-1 bg-[#121212]">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 140 : 0}
       >
-        <Text className="text-white text-lg font-bold">username</Text>
+        <View className="flex-row items-start gap-3 mb-4">
+          {/* User Avatar */}
+          {profile?.avatar_url ? (
+            <SupabaseImage
+              bucket="avatars"
+              path={profile.avatar_url.replace(/^.*\/avatars\//, '')}
+              className="w-12 h-12 rounded-full"
+            />
+          ) : (
+            <View className="w-12 h-12 rounded-full bg-neutral-700 items-center justify-center">
+              <Text className="text-white text-lg">
+                {profile?.full_name?.charAt(0) || '?'}
+              </Text>
+            </View>
+          )}
 
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="What's on your mind?"
-          placeholderTextColor="gray"
-          className="text-white text-lg"
-          multiline
-          numberOfLines={4}
-        />
+          {/* User Info and Post Input */}
+          <View className="flex-1">
+            <View className="flex-row items-center gap-2 mb-2">
+              <Text className="text-white font-bold">{profile?.full_name}</Text>
+              <Text className="text-gray-500">@{profile?.username}</Text>
+            </View>
+
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="What's on your mind?"
+              placeholderTextColor="gray"
+              className="text-white text-lg"
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+            />
+          </View>
+        </View>
 
         {image && (
-          <Image
-            source={{ uri: image.uri }}
-            className="w-1/2 rounded-lg my-4"
-            style={{ aspectRatio: image.width / image.height }}
-          />
+          <View className="relative">
+            <Image
+              source={{ uri: image.uri }}
+              className="w-1/2 rounded-lg my-4"
+              style={{ aspectRatio: image.width / image.height }}
+            />
+            <Pressable
+              onPress={() => setImage(null)}
+              className="absolute top-2 left-2 bg-black/50 rounded-full p-1"
+            >
+              <Entypo name="cross" size={20} color="white" />
+            </Pressable>
+          </View>
         )}
 
         {error && (
           <Text className="text-red-500 text-sm mt-4">{error.message}</Text>
         )}
 
-        <View className="flex-row items-center gap-2 mt-4">
-          <Entypo onPress={pickImage} name="images" size={20} color="gray" />
+        <View className="flex-row items-center justify-between mt-4">
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={pickImage}
+              className="p-2 rounded-full bg-neutral-800"
+              disabled={isPending || isUploading}
+            >
+              <Entypo name="images" size={20} color="white" />
+            </Pressable>
+            {image && (
+              <Text className="text-gray-400 text-sm">
+                Image selected
+              </Text>
+            )}
+          </View>
+
+          <Text className="text-gray-400 text-sm">
+            {text.length}/500
+          </Text>
         </View>
 
-        <View className="mt-auto">
+        <View className="absolute bottom-9 right-1">
           <Pressable
-            onPress={() => mutate()}
+            onPress={handlePost}
             className={`${
-              isPending ? "bg-white/50" : "bg-white"
+              (isPending || isUploading || (!text.trim() && !image))
+                ? "bg-white/50"
+                : "bg-white"
             } p-3 px-6 self-end rounded-full`}
-            disabled={isPending}
+            disabled={isPending || isUploading || (!text.trim() && !image)}
           >
-            <Text className="text-black font-bold">Post</Text>
+            {isPending || isUploading ? (
+              <ActivityIndicator size="small" color="black" />
+            ) : (
+              <Text className="text-black font-bold">Post</Text>
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>

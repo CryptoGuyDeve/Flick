@@ -2,19 +2,15 @@ import { View, Text, Image, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Tables } from "@/types/database.types";
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import SupabaseImage from "./SupabaseImage";
+import { PostWithUser } from "@/types/post";
+import { useAuth } from '@/providers/AuthProvider';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { likePost } from '@/services/posts';
 
 dayjs.extend(relativeTime);
-
-type PostWithUser = Tables<"posts"> & {
-  user: Tables<"profiles">;
-  replies: {
-    count: number;
-  }[];
-};
 
 export default function PostListItem({
   post,
@@ -23,6 +19,19 @@ export default function PostListItem({
   post: PostWithUser;
   isLastInGroup?: boolean;
 }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { mutate: handleLike } = useMutation({
+    mutationFn: () => likePost(post.id, user!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+
+  const isLiked = post.likes?.some((like) => like.user_id === user?.id) ?? false;
+  const repliesCount = post.replies?.length ?? 0;
+
   return (
     <Link href={`/posts/${post.id}`} asChild>
       <Pressable
@@ -33,19 +42,23 @@ export default function PostListItem({
         {/* User Avatar */}
         <View className="mr-3 relative w-12 items-center">
           {/* Avatar */}
-          {post.user.avatar_url ? (
-            <SupabaseImage
-              bucket="avatars"
-              path={post.user.avatar_url.replace(/^.*\/avatars\//, "")}
-              className="w-12 h-12 rounded-full z-10"
-            />
-          ) : (
-            <View className="w-12 h-12 rounded-full bg-neutral-700 items-center justify-center z-10">
-              <Text className="text-white text-lg">
-                {post.user.full_name?.charAt(0) || "?"}
-              </Text>
-            </View>
-          )}
+          <Link href={`/profile/${post.user.id}`} asChild>
+            <Pressable>
+              {post.user.avatar_url ? (
+                <SupabaseImage
+                  bucket="avatars"
+                  path={post.user.avatar_url.replace(/^.*\/avatars\//, "")}
+                  className="w-12 h-12 rounded-full z-10"
+                />
+              ) : (
+                <View className="w-12 h-12 rounded-full bg-neutral-700 items-center justify-center z-10">
+                  <Text className="text-white text-lg">
+                    {post.user.full_name?.charAt(0) || "?"}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          </Link>
 
           {/* Thread Line */}
           {!isLastInGroup && (
@@ -88,24 +101,22 @@ export default function PostListItem({
           {/* Interaction Buttons */}
           <View className="flex-row items-center gap-x-6 mt-2">
             <Pressable className="flex-row items-center">
-              <Ionicons name="heart-outline" size={22} color="#d1d5db" />
-              <Text className="text-gray-300 ml-2">0</Text>
-            </Pressable>
-
-            <Pressable className="flex-row items-center">
               <Ionicons name="chatbubble-outline" size={22} color="#d1d5db" />
+              <Text className="text-gray-300 ml-2">{repliesCount}</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => handleLike()}
+              className="flex-row items-center"
+            >
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={20}
+                color={isLiked ? '#ef4444' : '#666'}
+              />
               <Text className="text-gray-300 ml-2">
-                {post?.replies?.[0].count || 0}
+                {post.likes?.length ?? 0}
               </Text>
-            </Pressable>
-
-            <Pressable className="flex-row items-center">
-              <Ionicons name="repeat" size={22} color="#d1d5db" />
-              <Text className="text-gray-300 ml-2">0</Text>
-            </Pressable>
-
-            <Pressable className="flex-row items-center">
-              <Ionicons name="paper-plane-outline" size={22} color="#d1d5db" />
             </Pressable>
           </View>
         </View>

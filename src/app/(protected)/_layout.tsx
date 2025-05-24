@@ -1,5 +1,6 @@
 import { Redirect, Stack } from "expo-router";
 import { useAuth } from "@/providers/AuthProvider";
+
 export default function ProtectedLayout() {
   const { isAuthenticated } = useAuth();
 
@@ -16,6 +17,13 @@ export default function ProtectedLayout() {
           title: "New Flick",
           presentation: "modal",
           animation: "slide_from_bottom",
+        }}
+      />
+      <Stack.Screen
+        name="profile/[id]"
+        options={{
+          title: "Profile",
+          headerBackTitle: "Back",
         }}
       />
     </Stack>

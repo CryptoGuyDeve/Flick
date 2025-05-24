@@ -1,19 +1,28 @@
-import { View, Text, TextInput, TouchableOpacity, Pressable, Image, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, Image, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import UserAvatarPicker from '@/components/UserAvatarPicker';
 
 interface FormErrors {
   email?: string;
   password?: string;
+  username?: string;
+  fullName?: string;
 }
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [bio, setBio] = useState('');
+  const [website, setWebsite] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -34,38 +43,97 @@ export default function SignUpScreen() {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
+    if (!username) {
+      newErrors.username = 'Username is required';
+    } else if (username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+
+    if (!fullName) {
+      newErrors.fullName = 'Full name is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleAvatarUpload = async (url: string) => {
+    setAvatarUrl(url);
+  };
 
   const handleSignUp = async () => {
     if (!validateForm()) return;
-
-    if (!email || !password) {
-      setSignupError('Please enter your email and password')
-      return
-    }
 
     try {
       setIsLoading(true);
       setSignupError('');
       
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.signUp({
+      // 1. Sign up the user
+      console.log('Starting signup process...');
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-      })
-      if (error) Alert.alert(error.message)
-      if (!session) Alert.alert('Please check your inbox for email verification!')
-      
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      });
+
+      if (signUpError) {
+        console.error('Signup error:', signUpError);
+        Alert.alert('Error', signUpError.message);
+        return;
+      }
+
+      if (!user) {
+        console.error('No user returned from signup');
+        Alert.alert('Error', 'Failed to create account');
+        return;
+      }
+
+      console.log('User created successfully:', user.id);
+
+      // 2. Create the profile
+      const profileData = {
+        id: user.id,
+        username,
+        full_name: fullName,
+        bio: bio || null,
+        website: website || null,
+        avatar_url: avatarUrl || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('Creating profile with data:', profileData);
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(profileData, {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        Alert.alert(
+          'Error',
+          `Failed to create profile: ${profileError.message}. Please try again.`
+        );
+        return;
+      }
+
+      console.log('Profile created successfully');
+
+      Alert.alert(
+        'Success',
+        'Account created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/login'),
+          },
+        ]
+      );
 
     } catch (error) {
-      console.error('Login error', error)
+      console.error('Unexpected error during signup:', error);
+      setSignupError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -80,13 +148,19 @@ export default function SignUpScreen() {
         colors={['rgba(0,0,0,0.9)', 'rgba(26,26,26,0.9)', 'rgba(42,42,42,0.9)']}
         className="flex-1"
       >
-        <View className="flex-1 p-6 justify-center">
+        <ScrollView 
+          className="flex-1 p-6"
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View className="space-y-8">
             <View className="items-center mb-8">
-              <View className="w-20 h-20 bg-gray-800/50 rounded-full items-center justify-center mb-4">
-                <Ionicons name="person-add" size={40} color="#fff" />
-              </View>
-              <Text className="text-4xl font-bold text-white mb-3">Create Account</Text>
+              <UserAvatarPicker
+                currentAvatarUrl={avatarUrl}
+                onUpload={handleAvatarUpload}
+                size={100}
+              />
+              <Text className="text-4xl font-bold text-white mb-3 mt-4">Create Account</Text>
               <Text className="text-gray-400 text-center text-base">Join us and start your journey</Text>
             </View>
 
@@ -96,7 +170,54 @@ export default function SignUpScreen() {
               </View>
             ) : null}
 
-            <View className="space-y-5 gap-4">
+            <View className="space-y-5">
+              <View className="space-y-1">
+                <Text className="text-gray-400 text-sm ml-1">Full Name</Text>
+                <View className={`flex-row items-center bg-gray-800/30 border ${errors.fullName ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
+                  <Ionicons name="person-outline" size={20} color="#6B7280" />
+                  <TextInput
+                    className="flex-1 px-3 py-4 text-white text-base"
+                    placeholder="Enter your full name"
+                    placeholderTextColor="#6B7280"
+                    value={fullName}
+                    onChangeText={(text) => {
+                      setFullName(text);
+                      if (errors.fullName) {
+                        setErrors(prev => ({ ...prev, fullName: undefined }));
+                      }
+                    }}
+                    editable={!isLoading}
+                  />
+                </View>
+                {errors.fullName && (
+                  <Text className="text-red-500 text-sm ml-1">{errors.fullName}</Text>
+                )}
+              </View>
+
+              <View className="space-y-1">
+                <Text className="text-gray-400 text-sm ml-1">Username</Text>
+                <View className={`flex-row items-center bg-gray-800/30 border ${errors.username ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
+                  <Ionicons name="at-outline" size={20} color="#6B7280" />
+                  <TextInput
+                    className="flex-1 px-3 py-4 text-white text-base"
+                    placeholder="Choose a username"
+                    placeholderTextColor="#6B7280"
+                    value={username}
+                    onChangeText={(text) => {
+                      setUsername(text);
+                      if (errors.username) {
+                        setErrors(prev => ({ ...prev, username: undefined }));
+                      }
+                    }}
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                  />
+                </View>
+                {errors.username && (
+                  <Text className="text-red-500 text-sm ml-1">{errors.username}</Text>
+                )}
+              </View>
+
               <View className="space-y-1">
                 <Text className="text-gray-400 text-sm ml-1">Email</Text>
                 <View className={`flex-row items-center bg-gray-800/30 border ${errors.email ? 'border-red-500/50' : 'border-gray-700/30'} rounded-2xl px-4`}>
@@ -156,6 +277,38 @@ export default function SignUpScreen() {
                 )}
               </View>
 
+              <View className="space-y-1">
+                <Text className="text-gray-400 text-sm ml-1">Bio (Optional)</Text>
+                <View className="bg-gray-800/30 border border-gray-700/30 rounded-2xl px-4">
+                  <TextInput
+                    className="px-3 py-4 text-white text-base"
+                    placeholder="Tell us about yourself"
+                    placeholderTextColor="#6B7280"
+                    value={bio}
+                    onChangeText={setBio}
+                    multiline
+                    numberOfLines={3}
+                    editable={!isLoading}
+                  />
+                </View>
+              </View>
+
+              <View className="space-y-1">
+                <Text className="text-gray-400 text-sm ml-1">Website (Optional)</Text>
+                <View className="bg-gray-800/30 border border-gray-700/30 rounded-2xl px-4">
+                  <TextInput
+                    className="px-3 py-4 text-white text-base"
+                    placeholder="Your website URL"
+                    placeholderTextColor="#6B7280"
+                    value={website}
+                    onChangeText={setWebsite}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                  />
+                </View>
+              </View>
+
               <TouchableOpacity
                 onPress={handleSignUp}
                 className="w-full py-4 rounded-2xl overflow-hidden bg-white"
@@ -178,7 +331,7 @@ export default function SignUpScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </LinearGradient>
     </KeyboardAvoidingView>
   );
