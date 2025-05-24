@@ -5,6 +5,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { Tables } from "@/types/database.types";
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import SupabaseImage from "./SupabaseImage";
 
 dayjs.extend(relativeTime);
 
@@ -22,13 +23,21 @@ export default function PostDetails({ post }: { post: PostWithUser }) {
 
         {/* Author Avatar and Info */}
         <View className="flex-1 flex-row items-center">
-        <Image
-          source={{
-            uri: post.user.avatar_url || "https://via.placeholder.com/150",
-          }}
-          className="w-12 h-12 rounded-full mr-3"
-        />
+          {post.user.avatar_url ? (
+            <SupabaseImage
+              bucket="avatars"
+              path={post.user.avatar_url.replace(/^.*\/avatars\//, '')}
+              className="w-12 h-12 rounded-full mr-3"
+            />
+          ) : (
+            <View className="w-12 h-12 rounded-full bg-neutral-700 items-center justify-center mr-3">
+              <Text className="text-white text-lg">
+                {post.user.full_name?.charAt(0) || '?'}
+              </Text>
+            </View>
+          )}
           {/* User Info */}
+          <View>
             <Text className="text-white font-bold mr-2">
               {post.user.full_name}
             </Text>
@@ -38,6 +47,7 @@ export default function PostDetails({ post }: { post: PostWithUser }) {
               {dayjs(post.created_at).fromNow()}
             </Text>
           </View>
+        </View>
 
         {/* Post Content */}
         <Text className="text-white">{post.content}</Text>
@@ -58,7 +68,7 @@ export default function PostDetails({ post }: { post: PostWithUser }) {
           )}
 
         {/* Interaction Buttons */}
-        <View className="flex-row gap-4">
+        <View className="flex-row justify-between mt-2">
           <Pressable className="flex-row items-center">
             <Ionicons name="heart-outline" size={22} color="#d1d5db" />
             <Text className="text-gray-300 ml-2">0</Text>

@@ -3,6 +3,7 @@ import { getProfileById } from "@/services/profiles";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
+import SupabaseImage from "./SupabaseImage";
 
 export default function ProfileHeader() {
   const { user } = useAuth();
@@ -31,12 +32,20 @@ export default function ProfileHeader() {
           <Text className="text-neutral-200 text-lg">{profile?.username}</Text>
         </View>
 
-        <Image
-          source={{ uri: profile?.avatar_url }}
-          className="w-20 h-20 rounded-full"
-        />
+        {profile?.avatar_url ? (
+          <SupabaseImage 
+            bucket="avatars"
+            path={profile.avatar_url.replace(/^.*\/avatars\//, '')}
+            className="w-20 h-20 rounded-full"
+          />
+        ) : (
+          <View className="w-20 h-20 rounded-full bg-neutral-700 items-center justify-center">
+            <Text className="text-white text-2xl">
+              {profile?.full_name?.charAt(0) || '?'}
+            </Text>
+          </View>
+        )}
       </View>
-
       <Text className="text-neutral-200 leading-snug">{profile?.bio}</Text>
 
       <View className="flex-row gap-2">

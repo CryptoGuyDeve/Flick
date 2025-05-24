@@ -1,3 +1,4 @@
+import UserAvatarPicker from "@/components/UserAvatarPicker";
 import { useAuth } from "@/providers/AuthProvider";
 import { getProfileById, updateProfile } from "@/services/profiles";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,10 +9,11 @@ import {
   Text,
   TextInput,
   View,
-  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  KeyboardTypeOptions,
 } from "react-native";
 
 export default function ProfileEditScreen() {
@@ -20,6 +22,7 @@ export default function ProfileEditScreen() {
   const [username, setUsername] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -31,23 +34,67 @@ export default function ProfileEditScreen() {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      updateProfile(user!.id, {
+    mutationFn: async () => {
+      console.log('Updating profile with avatar URL:', avatarUrl);
+      const updatedProfile = await updateProfile(user!.id, {
         id: user!.id,
         full_name: fullName,
         bio: bio,
         username: username,
         website: website,
         avatar_url: avatarUrl,
-      }),
-    onSuccess: () => {
+      });
+      console.log('Profile updated successfully:', updatedProfile);
+      return updatedProfile;
+    },
+    onSuccess: (updatedProfile) => {
+      if (!updatedProfile) {
+        console.error('Profile update returned null');
+        Alert.alert('Error', 'Failed to update profile. Please try again.');
+        return;
+      }
+
+      console.log('Updating cache and invalidating queries');
+      
+      // Update the profile cache immediately
+      queryClient.setQueryData(["profile", user?.id], updatedProfile);
+      
+      // Update any posts that might show the user's avatar
+      const postsQueries = queryClient.getQueriesData({ queryKey: ["posts"] });
+      postsQueries.forEach(([queryKey, oldData]) => {
+        if (Array.isArray(oldData)) {
+          const updatedPosts = oldData.map((post: any) => {
+            if (post.user?.id === user?.id) {
+              return {
+                ...post,
+                user: {
+                  ...post.user,
+                  avatar_url: updatedProfile.avatar_url,
+                },
+              };
+            }
+            return post;
+          });
+          queryClient.setQueryData(queryKey, updatedPosts);
+        }
+      });
+
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["supabaseImage"] });
+      
       router.back();
+    },
+    onError: (error) => {
+      console.error('Profile update error:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
     },
   });
 
   useEffect(() => {
     if (profile) {
+      console.log('Setting initial profile data:', profile);
       setFullName(profile.full_name ?? "");
       setBio(profile.bio ?? "");
       setUsername(profile.username ?? "");
@@ -55,6 +102,20 @@ export default function ProfileEditScreen() {
       setAvatarUrl(profile.avatar_url ?? "");
     }
   }, [profile]);
+
+  const handleAvatarUpload = (url: string) => {
+    console.log('Avatar uploaded, new URL:', url);
+    setAvatarUrl(url);
+    
+    // Update the profile cache immediately with the new avatar URL
+    queryClient.setQueryData(["profile", user?.id], (oldData: any) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        avatar_url: url,
+      };
+    });
+  };
 
   return (
     <KeyboardAvoidingView
@@ -68,39 +129,17 @@ export default function ProfileEditScreen() {
         <Text className="text-2xl font-semibold mb-6 text-white">Edit Profile</Text>
 
         {/* Avatar Section */}
-        <View className="items-center mb-8">
-          <View
-            className="w-28 h-28 rounded-full bg-gray-800 overflow-hidden justify-center items-center"
-            style={{ shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 10 }}
-          >
-            {avatarUrl ? (
-              <Image
-                source={{ uri: avatarUrl }}
-                className="w-full h-full rounded-full"
-                resizeMode="cover"
-              />
-            ) : (
-              <Text className="text-gray-500 text-xl">No Avatar</Text>
-            )}
-          </View>
-          {/* <TextInput
-            value={avatarUrl}
-            onChangeText={setAvatarUrl}
-            placeholder="Paste Avatar URL"
-            placeholderTextColor="#666"
-            className="mt-3 px-4 py-2 w-full border border-gray-700 rounded-full text-white text-center bg-[#1E1E1E]"
-            autoCapitalize="none"
-            keyboardType="url"
-            returnKeyType="done"
-          /> */}
-        </View>
+        <UserAvatarPicker 
+          currentAvatarUrl={profile?.avatar_url ?? ""} 
+          onUpload={handleAvatarUpload} 
+        />
 
         {/* Input Fields */}
         {[
           { label: "Name", value: fullName, setValue: setFullName, placeholder: "Full Name" },
-          { label: "Username", value: username, setValue: setUsername, placeholder: "Username", autoCapitalize: "none" },
+          { label: "Username", value: username, setValue: setUsername, placeholder: "Username", autoCapitalize: "none" as const },
           { label: "Bio", value: bio, setValue: setBio, placeholder: "Bio", multiline: true, numberOfLines: 3 },
-          { label: "Website", value: website, setValue: setWebsite, placeholder: "Website URL", keyboardType: "url", autoCapitalize: "none" },
+          { label: "Website", value: website, setValue: setWebsite, placeholder: "Website URL", keyboardType: "url" as KeyboardTypeOptions, autoCapitalize: "none" as const },
         ].map(({ label, value, setValue, placeholder, multiline, numberOfLines, keyboardType, autoCapitalize }) => (
           <View key={label} className="mb-6">
             <Text className="text-gray-300 font-medium mb-1">{label}</Text>
@@ -112,7 +151,7 @@ export default function ProfileEditScreen() {
               multiline={multiline}
               numberOfLines={numberOfLines}
               keyboardType={keyboardType}
-              autoCapitalize={autoCapitalize ?? "sentences"}
+              autoCapitalize={autoCapitalize}
               className={`border border-gray-700 rounded-lg px-4 py-3 text-white ${
                 multiline ? "text-base h-auto" : "text-base"
               } bg-[#1E1E1E]`}
@@ -120,11 +159,10 @@ export default function ProfileEditScreen() {
             />
           </View>
         ))}
-
       </ScrollView>
 
       {/* Save Button */}
-      <View className="absolute bottom-0 left-0 right-0 p-4 bg-[#121212] border-t border-gray-700">
+      <View className="absolute bottom-0 left-0 right-0 p-4 bg-[#121212]">
         <Pressable
           onPress={() => mutate()}
           disabled={isPending}
@@ -138,7 +176,5 @@ export default function ProfileEditScreen() {
         </Pressable>
       </View>
     </KeyboardAvoidingView>
-
-    // 
   );
 }
