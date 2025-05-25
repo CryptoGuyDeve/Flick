@@ -87,9 +87,9 @@ export const likePost = async (postId: string) => {
       .select('id')
       .eq('user_id', user.id)
       .eq('post_id', postId)
-      .single();
+      .maybeSingle();
 
-    if (likeCheckError && likeCheckError.code !== 'PGRST116') {
+    if (likeCheckError) {
       console.error('Error checking existing like:', likeCheckError);
       throw likeCheckError;
     }
@@ -118,6 +118,10 @@ export const likePost = async (postId: string) => {
       });
 
     if (likeError) {
+      // If it's a duplicate key error, the post was already liked
+      if (likeError.code === '23505') {
+        return { liked: true };
+      }
       console.error('Error liking post:', likeError);
       throw likeError;
     }

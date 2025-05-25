@@ -1,11 +1,22 @@
 import { router, Tabs } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { View } from "react-native";
+
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarShowLabel: false,
+        tabBarStyle: {
+          backgroundColor: '#000',
+          borderTopColor: '#333',
+        },
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#666',
+        headerStyle: {
+          backgroundColor: '#000',
+        },
+        headerTintColor: '#fff',
       }}
     >
       <Tabs.Screen
@@ -28,6 +39,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Explore",
+          tabBarIcon: ({ size, color }) => (
+            <Feather name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="plus"
         options={{
           title: "Plus",
@@ -40,15 +60,6 @@ export default function TabsLayout() {
             e.preventDefault();
             router.push("/new");
           },
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          tabBarIcon: ({ size, color }) => (
-            <Feather name="heart" size={size} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
